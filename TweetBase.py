@@ -19,8 +19,8 @@ class TweetBase(object):
                     allFiltersFound = False
                     break
             if allFiltersFound:
-                retSTate.append(tweet['text'])
-        return retSTate
+                retState.append(tweet['text'])
+        return retState
 
     #equivalent to filterStringList, but only accepts one string
     def filterOneString(self,stringInput):

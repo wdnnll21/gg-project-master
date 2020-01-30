@@ -65,10 +65,25 @@ class AwardParser(object):
         
         return max(hostVote,key=hostVote.get)
 
+    def WinnerFinder(self, award):
+        firstcull = self.datab.filterStringList([award,"wins"])
+        docs = []
+        winVote = {}
+
+        for tweet in firstcull:
+            docs.append(spacyNLP(tweet))
+        
+        for doc in docs:
+            for ent in doc.ents:
+                if ent.label_ == "PERSON":
+                    print(ent.text)
+
 ap = AwardParser()
 #ap.HostFinder()
 
-ap.awardFinder()
+#ap.awardFinder()
+
+ap.WinnerFinder("Best Performance by an Actor in a Motion Picture - Drama")
 
 
 
