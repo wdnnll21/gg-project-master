@@ -3,6 +3,8 @@ from spacy.matcher import PhraseMatcher
 from TweetBase import TweetBase
 from spacy.symbols import *
 import re
+from datetime import datetime
+from datetime import timedelta
 
 spacyNLP = spacy.load("en_core_web_sm")
 
@@ -119,11 +121,39 @@ class AwardParser(object):
                     else:
                         nomVote[tfind.lower()] = 1
 
+    def PresenterFinder(self, award, winner):
+        winTime = self.datab.earliestMention([award,winner,"won"])
+        winnerTime = datetime.strptime(winTime,"%Y-%m-%dT%H:%M:%S")
+        End = winnerTime + timedelta(minutes=5)
+        Start = winnerTime - timedelta(minutes=5)
+        tenMinuteList = self.datab.timeFrameFilter(str(Start).replace(" ","T"),str(End).replace(" ","T"))
+
+        kwlist = ["announce","present"]
+        PresenterFilter = filter(lambda tweet: any(kw in tweet for kw in kwlist), tenMinuteList)
+
+        for presentertweet in list(PresenterFilter):
+            print(presentertweet)
+    
+    def TestMethod(self):
+        test = self.datab.earliestMention(["Taylor Swift","Amy Poehler"])
+        testDate = datetime.strptime(test,"%Y-%m-%dT%H:%M:%S")
+        testFiveMinutes = testDate + timedelta(minutes=5)
+        testEarlier = testDate - timedelta(minutes=5)
+        print(str(testEarlier).replace(" ","T"))
+        testList = self.datab.timeFrameFilter(str(testEarlier).replace(" ","T"),str(testFiveMinutes).replace(" ","T"))
+        for tweet in testList:
+            print(tweet)
+        
 
 
 ap = AwardParser()
 
-ap.NomineeFinder("Drama","TITLE")
+#p.NomineeFinder("Drama","TITLE")
+
+ap.PresenterFinder("Best Director","Sam Mendes")
+
+
+
 
 
 

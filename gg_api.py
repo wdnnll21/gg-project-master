@@ -44,7 +44,6 @@ def pre_ceremony():
     will use, and stores that data in your DB or in a json, csv, or
     plain text file. It is the first thing the TA will run when grading.
     Do NOT change the name of this function or what it returns.'''
-    global datab = TweetBase("gg2020.json")
     
     print("Pre-ceremony processing complete.")
     return

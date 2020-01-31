@@ -1,5 +1,6 @@
 import json
 import re
+from bisect import bisect_left
 
 class TweetBase(object):
     def __init__(self, filename):
@@ -66,3 +67,25 @@ class TweetBase(object):
                 retState.append(ser)
 
         return retState
+
+    def timeFrameFilter(self,time1,time2):
+        times = [tweet['created_at'] for tweet in self.data]
+        times.reverse()
+        early = len(self.data) - bisect_left(times,time1)
+        late = len(self.data) - bisect_left(times,time2)
+        
+        filtered = []
+        print(self.data[early])
+        for tweet in self.data[late:early]:
+            filtered.append(tweet['text'])
+
+        return filtered
+            
+
+    def earliestMention(self,filtersList):
+        for tweet in reversed(self.data):
+            text = tweet['text']
+
+            if all([kw in text for kw in filtersList]):
+                return tweet['created_at']
+            
