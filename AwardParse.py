@@ -94,7 +94,7 @@ class AwardParser(object):
             allWinners.append([aA, self.WinnerFinder(aA)])
 
     def NomineeFinder(self, award, nomType):
-        firstcull = self.datab.filterStringList([award,"\""])
+        firstcull = self.datab.filterStringList([award, "\""])
         docs = []
         nomVote = {}
 
@@ -109,19 +109,16 @@ class AwardParser(object):
                         else:
                             nomVote[ent.lower_] = 1
             elif nomType == "TITLE":
-                titlefind = re.findall(r"([\"])(?:(?=(\\?))\2.)*?\1", tweet)
+                titlefind = re.finditer(r"([\"])(?:(?=(\\?))\2.)*?\1", tweet)
 
                 for match in titlefind:
-                    print(tweet)
-                    print(match)
-                    tfind = str(match)
+                    print(match[0])
+                    tfind = match[0]
                     if tfind.lower() in nomVote:
                         nomVote[tfind.lower()] += 1
                     else:
                         nomVote[tfind.lower()] = 1
 
-
-    
 
 
 ap = AwardParser()
