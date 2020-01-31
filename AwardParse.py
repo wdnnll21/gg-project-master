@@ -2,6 +2,7 @@ import spacy
 from spacy.matcher import PhraseMatcher
 from TweetBase import TweetBase
 from spacy.symbols import *
+import re
 
 spacyNLP = spacy.load("en_core_web_sm")
 
@@ -10,6 +11,7 @@ class AwardParser(object):
         self.datab = TweetBase("gg2020.json")
         self.datab.cullTwitterPunctuation()
         self.awardFilter = self.datab.anyStringList(["award for Best "])
+        self.actualAwards = []
 
     def awardFinder(self): 
         docs = []
@@ -76,14 +78,55 @@ class AwardParser(object):
         for doc in docs:
             for ent in doc.ents:
                 if ent.label_ == "PERSON":
-                    print(ent.text)
+                    if ent.lower_ in winVote:
+                        winVote[ent.lower_] += 1
+                    else:
+                        winVote[ent.lower_] = 1
+
+        return max(winVote, key=winVote.get)
+
+    def acceptActualAwards(self, actualList):
+        self.actualAwards = actualList
+
+    def FindAllWinners(self):
+        allWinners = []
+        for aA in self.actualAwards:
+            allWinners.append([aA, self.WinnerFinder(aA)])
+
+    def NomineeFinder(self, award, nomType):
+        firstcull = self.datab.filterStringList([award,"\""])
+        docs = []
+        nomVote = {}
+
+        for tweet in firstcull:
+            if nomType == "PERSON":
+                doc = spacyNLP(tweet)
+                for ent in doc.ents:
+                    if ent.label_ == "PERSON":
+                        print(ent)
+                        if ent.lower_ in nomVote:
+                            nomVote[ent.lower_] += 1
+                        else:
+                            nomVote[ent.lower_] = 1
+            elif nomType == "TITLE":
+                titlefind = re.findall(r"([\"])(?:(?=(\\?))\2.)*?\1", tweet)
+
+                for match in titlefind:
+                    print(tweet)
+                    print(match)
+                    tfind = str(match)
+                    if tfind.lower() in nomVote:
+                        nomVote[tfind.lower()] += 1
+                    else:
+                        nomVote[tfind.lower()] = 1
+
+
+    
+
 
 ap = AwardParser()
-#ap.HostFinder()
 
-#ap.awardFinder()
-
-ap.WinnerFinder("Best Performance by an Actor in a Motion Picture - Drama")
+ap.NomineeFinder("Drama","TITLE")
 
 
 
