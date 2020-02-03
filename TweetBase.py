@@ -88,4 +88,24 @@ class TweetBase(object):
 
             if all([kw in text for kw in filtersList]):
                 return tweet['created_at']
+
+
+    #accepts a list of filters, tries to find all the 
+    def ANDorFILTER(self,filtersList):
+        retState = []
+        for tweet in self.data:
+            allFound = True
+            for filter in filtersList:
+                if isinstance(filter,list):
+                    if not any([kw in tweet['text'] for kw in filter]):
+                        allFound = False
+                else:
+                    if filter not in tweet['text']:
+                        allFound = False
+            if allFound:
+                retState.append(tweet['text'])
+
+        return retState
+                         
+
             

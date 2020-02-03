@@ -143,14 +143,60 @@ class AwardParser(object):
         testList = self.datab.timeFrameFilter(str(testEarlier).replace(" ","T"),str(testFiveMinutes).replace(" ","T"))
         for tweet in testList:
             print(tweet)
+
+    def AwardVariantFinder(self,award):
+        variant = [award]
+        awarray = award.split(" ")
+        doc = spacyNLP(award)
+
+        for ent in doc.ents:
+            variant.append(ent)
+        
+        return variant
+
+    def NameVariantFinder(self,person):
+        variants = [person]
+        personarray = person.split(" ")
+        variants.append(personarray[0])
+        variants.append(personarray[1])
+        variants.append(personarray[0] + personarray[1])
+
+        return variants
+
+    def TheyWonAwardParser(self,filters):
+        filters.append(["wins","won"])
+        firstcull = self.datab.ANDorFILTER(filters)
+        winVote = {}
+        docs = []
+
+        for tweet in firstcull:
+            subj = ""
+            pred = ""
+            ignore = False
+            doc = spacyNLP(tweet)
+
+            for word in doc:
+                if word.text == "won" and word.pos_ != "VERB":
+                    ignore = True
+                elif word.dep_ in ["nsubj","nsubjpass"] and word.head.text in ["wins","won"]:
+                    subj = word.text
+                elif word.dep_ == "dobj" and word.head.text in ["wins","won"]:
+                    pred = word.text
+
+
+            if not ignore and subj != "" and pred != "":
+                print(tweet,"\n",subj, " ", pred) 
         
 
-
+    
 ap = AwardParser()
+
+ap.WinnerFinder2(["Best Director"])
+
 
 #p.NomineeFinder("Drama","TITLE")
 
-ap.PresenterFinder("Best Director","Sam Mendes")
+#ap.PresenterFinder("Best Director","Sam Mendes")
 
 
 
