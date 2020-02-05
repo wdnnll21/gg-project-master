@@ -64,7 +64,7 @@ class TweetBase(object):
         for tweet in self.data:
             ser = re.search(expression,tweet)
             if ser:
-                retState.append(ser)
+                retState.append(tweet)
 
         return retState
 
@@ -99,13 +99,33 @@ class TweetBase(object):
                 if isinstance(filter,list):
                     if not any([kw in tweet['text'] for kw in filter]):
                         allFound = False
+                        break
+                elif isinstance(filter,re.Pattern):
+                    if re.match(filter,tweet['text']) == False:
+                        allFound = False
+                        break
+                elif isinstance(filter,tuple):
+                    if filter[0] in tweet['text']:
+                        allFound = False
+                        break
                 else:
                     if filter not in tweet['text']:
                         allFound = False
+                        break
             if allFound:
                 retState.append(tweet['text'])
 
         return retState
+
+    def MentionedTogether(self,string1,string2):
+        return len(self.ANDorFILTER([string1,string2]))
+
+    def PercentageMentionedTogether(self,string1,string2):
+        mention1 = len(self.anyStringList(string1))
+        mention2 = len(self.anyStringList(string2))
+        together = self.MentionedTogether(string1,string2)
+        return together / (mention1+mention2-together)
+        
                          
 
             

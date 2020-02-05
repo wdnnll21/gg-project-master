@@ -9,11 +9,19 @@ from datetime import timedelta
 spacyNLP = spacy.load("en_core_web_sm")
 
 class AwardParser(object):
-    def __init__(self):
+    def __init__(self,year):
         self.datab = TweetBase("gg2020.json")
         self.datab.cullTwitterPunctuation()
         self.awardFilter = self.datab.anyStringList(["award for Best "])
         self.actualAwards = []
+        self.year = year
+
+    def awardFinder2(self):
+        docs = []
+        firstcull = self.datab.regexStringList("Best [A-Z]")
+
+        for item in firstcull:
+            docs.append(spacyNLP(item))
 
     def awardFinder(self): 
         docs = []
@@ -25,7 +33,10 @@ class AwardParser(object):
             spacyNLP("award for Best Person in a Movie"),spacyNLP("award for Best Person in a Thing - Possible"))
 
         matcherb = PhraseMatcher(spacyNLP.vocab,attr="SHAPE")
-        matcherb.add("ConnectSelector",None,spacyNLP("Best Performance by a Person"),spacyNLP("Place by an Arch"),spacyNLP("Person in a Comedy"),spacyNLP("Person in a Good Comedy"),spacyNLP("Person in an Excellent Comedy"),spacyNLP("Person in an Actor"), spacyNLP("Person - Musical"),spacyNLP("Actor or Actress"))
+        matcherb.add("ConnectSelector",None,spacyNLP("Best Performance by a Person"),spacyNLP("Place by an Arch"),
+        spacyNLP("Person in a Comedy"),spacyNLP("Person in a Good Comedy"),
+        spacyNLP("Person in an Excellent Comedy"),spacyNLP("Person in an Actor"), 
+        spacyNLP("Person - Musical"),spacyNLP("Actor or Actress"),spacyNLP("Person in a Motion Picture"))
 
         awards = []
         for doc in docs:
@@ -84,6 +95,7 @@ class AwardParser(object):
                         winVote[ent.lower_] += 1
                     else:
                         winVote[ent.lower_] = 1
+        
 
         return max(winVote, key=winVote.get)
 
@@ -91,9 +103,11 @@ class AwardParser(object):
         self.actualAwards = actualList
 
     def FindAllWinners(self):
-        allWinners = []
+        allWinners = {}
         for aA in self.actualAwards:
-            allWinners.append([aA, self.WinnerFinder(aA)])
+            allWinners[aA] = self.WinnerFinder(aA)
+
+        return aA
 
     def NomineeFinder(self, award, nomType):
         firstcull = self.datab.filterStringList([award, "\""])
@@ -163,35 +177,99 @@ class AwardParser(object):
 
         return variants
 
-    def TheyWonAwardParser(self,filters):
+    def TheyWonAwardParser(self,filters, nomType):
         filters.append(["wins","won"])
+        if nomType == "MEDIA":
+            filters.append("\"")
         firstcull = self.datab.ANDorFILTER(filters)
         winVote = {}
         docs = []
 
         for tweet in firstcull:
+            mentionedMovies = list(re.finditer(r"([\"'])(?:(?=(\\?))\2.)*?\1", tweet))
             subj = ""
             pred = ""
             ignore = False
             doc = spacyNLP(tweet)
 
             for word in doc:
-                if word.text == "won" and word.pos_ != "VERB":
-                    ignore = True
-                elif word.dep_ in ["nsubj","nsubjpass"] and word.head.text in ["wins","won"]:
-                    subj = word.text
+                if word.text == ".":
+                    break
+                if nomType == "MEDIA" and word.text == "\"":
+                    subj = mentionedMovies[0][0]
+                #if word.text == "won" and word.pos_ != "VERB":
+                #    ignore = True
+                if word.dep_ in ["nsubj","nsubjpass"] and word.head.text in ["wins","won"] and nomType == "PERSON":
+                    if word.ent_iob_ == "I":
+                        subj = next(x for x in doc.ents if word.text in x.text).text
+                    else:
+                        subj = word.text
                 elif word.dep_ == "dobj" and word.head.text in ["wins","won"]:
                     pred = word.text
 
-
+            
             if not ignore and subj != "" and pred != "":
-                print(tweet,"\n",subj, " ", pred) 
+                print(tweet)
+                print(subj," ",pred)
+                #return subj
+            #return False
+
+    def CongratulationsParser(self, filters, nomType):
+        filters.append(["Congratulations to","Congrats to"],["for winning Best","for winning the award","for Best"])
+        if nomType == "MEDIA":
+            filters.append("\"")
+        firstcull = self.datab.ANDorFILTER(filters)
         
+        for tweet in firstcull:
+            mentionedMovies = list(re.finditer(r"([\"'])(?:(?=(\\?))\2.)*?\1", tweet))
+            obj = ""
+            doc = spacyNLP(tweet)
 
+            for word in doc:
+                if word.text == ".":
+                    break
+                if nomType=="MEDIA" and word.text=="\"":
+                    obj = mentionedMovies[0][0]
+                if word.text in ["Congratulations", "Congrats"] and doc[word.i+1].dep_ in ["prep"] and nomType=="PERSON":
+                    if word.ent_iob_ == "I":
+                        obj = next(x for x in doc.ents if word.text in x.text).text
+                #if word.text in ["Congratulations", "Congrats"] and doc[word.i+1].dep_ in [""]
+                
+
+
+
+
+        return 0
+
+    def VariantSimilarity(self, string1, string2):
+        return 0
+
+    def NominatedForParser(self,filters):
+        return 0
+
+    def NomineeListParser(self,filters):
+        return 0
+
+    def AllPresentersFinder(self,filters):
+        return 0
+
+    def PresentedTogetherParser(self,filters):
+        return 0
+
+    def TimeBasedPresentation(self,filters):
+        return 0
     
-ap = AwardParser()
+    
+ap = AwardParser(2020)
 
-ap.WinnerFinder2(["Best Director"])
+ap.TheyWonAwardParser([["Best","best"],["Limited Series","limited Series","limited series"],["Actress","actress"],["Supporting"]],"PERSON")
+
+
+
+
+# 'best television limited series or motion picture made for television'
+# cecil b. demille award
+
 
 
 #p.NomineeFinder("Drama","TITLE")
