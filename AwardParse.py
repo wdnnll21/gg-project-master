@@ -7,6 +7,7 @@ from datetime import datetime
 from datetime import timedelta
 
 spacyNLP = spacy.load("en_core_web_sm")
+synonyms = {"television":["tv"],"picture":["motion picture","movie","film","feature film"],"film":["movie","feature film"],"movie":["motion picture","film"]}
 
 class AwardParser(object):
     def __init__(self,year):
@@ -17,11 +18,55 @@ class AwardParser(object):
         self.year = year
 
     def awardFinder2(self):
-        docs = []
-        firstcull = self.datab.regexStringList("Best [A-Z]")
+        awards = {}
+        firstcull = self.datab.regexStringList(" Best [A-Z]")
 
         for item in firstcull:
-            docs.append(spacyNLP(item))
+            #docs.append(spacyNLP(item))
+            splt = item.split(" ")
+            indx = splt.index("Best")
+            end = indx
+            for itex in splt[indx:]:
+                if itex == "":
+                    break
+                punctual = False
+                for punct in ["\n","?","\"","\'","\\","/","\t","\xa0","Should"]:
+                    if punct in itex:
+                        punctual = True
+                        break
+                for punct in ["!",".",":"]:
+                    if punct in itex and itex[0].isupper():
+                        end += 1
+                        punctual = True
+                        break
+                if punctual:
+                    break
+                if "Best" in itex and indx != end:
+                    break
+                if itex[0].isupper():
+                    end += 1
+                elif itex in ["by","in","a","an","-","or"]:
+                    end += 1
+                elif itex == "for" and splt[end-1] == "Made":
+                    end += 1
+                else:
+                    break
+            while splt[end - 1] in ["by","in","a","an","-","or","for","Golden","Globe","To","Award"]:
+                end -= 1
+            for punct in ["!",".",":"]:
+                splt[end-1].replace(punct,"")
+            result = " ".join(splt[indx:end])
+            if result.lower() in awards and " - " in result:
+                awards[result.lower()] += 1
+            else:
+                awards[result.lower()] = 1
+
+        print(sorted(awards,key=awards.get))
+        
+        
+            
+
+
 
     def awardFinder(self): 
         docs = []
@@ -163,6 +208,7 @@ class AwardParser(object):
         awarray = award.split(" ")
         doc = spacyNLP(award)
 
+
         for ent in doc.ents:
             variant.append(ent)
         
@@ -215,7 +261,7 @@ class AwardParser(object):
             #return False
 
     def CongratulationsParser(self, filters, nomType):
-        filters.append(["Congratulations to","Congrats to"],["for winning Best","for winning the award","for Best"])
+        filters.extend([["Congratulations","Congrats"],["for winning Best","for winning the award","for Best"]])
         if nomType == "MEDIA":
             filters.append("\"")
         firstcull = self.datab.ANDorFILTER(filters)
@@ -230,19 +276,141 @@ class AwardParser(object):
                     break
                 if nomType=="MEDIA" and word.text=="\"":
                     obj = mentionedMovies[0][0]
-                if word.text in ["Congratulations", "Congrats"] and doc[word.i+1].dep_ in ["prep"] and nomType=="PERSON":
-                    if word.ent_iob_ == "I":
-                        obj = next(x for x in doc.ents if word.text in x.text).text
-                #if word.text in ["Congratulations", "Congrats"] and doc[word.i+1].dep_ in [""]
+                #if word.dep_ in ["pobj"] and word.head.text in ["to"] and nomType=="PERSON":
+                  #  if word.ent_iob_ == "I":
+                     #   obj = next(x for x in doc.ents if word.text in x.text).text
+                    #else:
+                    #    obj = word.text
+                # elif word.text in ["Congratulations", "Congrats"] 
+                if word.text in ["Congratulations", "Congrats"] and nomType=="PERSON":
+                   idx = word.i
+                   obj = next((ent for ent in doc.ents if ent.start > idx and ent.label_ == "PERSON"),False)
+                   if obj:
+                       obj = obj.text
+                            
+            
+            if obj:
+                print(tweet)
+                print(obj)
+                
+
+        return 0
+
+    #returns 1 if First String is Stronger, 2 if second string is stronger, -1 if dissimilar, 0 if partially similar
+    #string strength is determined by number of groups
+    def VariantSimilarity(self, string1, string2):
+        split1 = string1.lower().split(" ")
+        split2 = string2.lower().split(" ")
+        #a = "supporting" in split1
+        #b = "supporting" in split2
+        # if (a and not b) or (not a and b):
+        #    return -1
+
+        WordGroups = []
+        WordGroups2 = []
+        internals = []
+        for word in split1:
+            if len(word) > 3:
+                internals.append(word)
+            else:
+                split1.remove(word)
+                if len(internals) > 0:
+                    WordGroups.append(internals.copy())
+                internals = []
+        if len(internals) > 0:
+            WordGroups.append(internals.copy())
+            internals = []
+
+        for word2 in split2:
+            if len(word2) > 3:
+                internals.append(word2)
+            else:
+                split2.remove(word2)
+                if len(internals) > 0:
+                    WordGroups2.append(internals.copy())
+                internals = []
+        if len(internals) > 0:
+            WordGroups2.append(internals.copy())
+
+        TwoOntoOneMatches = 0
+        OneOntoTwoMatches = 0
+
+        for group in WordGroups:
+            match = False
+            for word2 in split2:
+                if word2 in group:
+                    match = True
+                    break
+                #elif word2 in synonyms:
+                #    for syno in synonyms[word2]:
+                #        if syno in string1.lower():
+                #            match = True
+                #            break
+
+            if match:
+                TwoOntoOneMatches+=1
+        for group2 in WordGroups2:
+            match = False
+            for word in split1:
+                if word in group2:
+                    match = True
+                    break
+                """elif word in synonyms:
+                    for syno in synonyms[word]:
+                        if syno in string1.lower():
+                            match = True
+                            break"""
+            if match:
+                OneOntoTwoMatches+=1
+
+        if OneOntoTwoMatches == len(WordGroups2) and TwoOntoOneMatches < len(WordGroups):
+            return 0
+
+        if TwoOntoOneMatches == len(WordGroups) and OneOntoTwoMatches < len(WordGroups2):
+            return 0
+
+        if OneOntoTwoMatches == len(WordGroups2) and TwoOntoOneMatches == len(WordGroups): 
+            if len(WordGroups2) > len(WordGroups):
+                return 2
+            elif len(WordGroups2) == len(WordGroups):
+                return 3
+            else:
+                return 1
+
+        return -1
+
+    #accepts a sorted dictionary of awards, determines all similarities, returns replaced dictionary
+    def AwardSimilarityCombo(self,dicti):
+        i = 1
+        for key in dicti:
+            for key2 in dicti[1:]:
+                if key == key2:
+                    continue
+                sim = self.VariantSimilarity(key,key2)
+                if sim == 3:
+                    if dicti[key] >= dicti[key2]:
+                        dicti[key] += dicti[key2]
+                        dicti.pop(key2,1)
+                    else:
+                        dicti[key2] += dicti[key]
+                        dicti.pop(key,1)
+                elif sim == 2:
+                    dicti[key2] += dicti[key]
+                    dicti.pop(key,1)
+                elif sim == 1:
+                    dicti[key] += dicti[key2]
+                    dicti.pop(key2,1)
+                    
+
+
+        
+
+
+
                 
 
 
-
-
-        return 0
-
-    def VariantSimilarity(self, string1, string2):
-        return 0
+         
 
     def NominatedForParser(self,filters):
         return 0
@@ -262,11 +430,11 @@ class AwardParser(object):
     
 ap = AwardParser(2020)
 
-ap.TheyWonAwardParser([["Best","best"],["Limited Series","limited Series","limited series"],["Actress","actress"],["Supporting"]],"PERSON")
+#ap.TheyWonAwardParser([["Best","best"],["Limited Series","limited Series","limited series"],["Actress","actress"],["Supporting"]],"PERSON")
 
-
-
-
+ap.awardFinder2()
+#print(ap.VariantSimilarity("Best Supporting Actress in a Motion Picture","Best Performance by an Actress in a Supporting Role in a Motion Picture"))
+#ap.CongratulationsParser(["Best Performance by an Actor in a Television Series—Musical or Comedy"],"PERSON")
 # 'best television limited series or motion picture made for television'
 # cecil b. demille award
 

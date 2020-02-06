@@ -55,6 +55,8 @@ class TweetBase(object):
                         break
                 if not culled:
                     addback += word + " "
+                    if "—" in addback:
+                        addback.replace("—","-")
             tweet['text'] = addback
 
     
@@ -62,9 +64,9 @@ class TweetBase(object):
         retState = []
         
         for tweet in self.data:
-            ser = re.search(expression,tweet)
+            ser = re.search(expression,tweet['text'])
             if ser:
-                retState.append(tweet)
+                retState.append(tweet['text'])
 
         return retState
 
