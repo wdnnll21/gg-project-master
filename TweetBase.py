@@ -3,12 +3,16 @@ import re
 from bisect import bisect_left
 
 class TweetBase(object):
-    def __init__(self, filename):
+    def __init__(self, filename, year):
         super(TweetBase, self)
         self.data = []
-        with open(filename,encoding="utf8") as json_tweets:
-            for line in json_tweets:
-                self.data.append(json.loads(line))
+        if year == 2020:
+            with open(filename,encoding="utf8") as json_tweets:
+                for line in json_tweets:
+                    self.data.append(json.loads(line))
+        else: 
+            with open(filename, encoding="utf8") as json_tweets:
+                self.data = json.load(json_tweets)
 
     #returns a list of tweets that contain all filter strings
     def filterStringList(self,filtersList):
@@ -44,7 +48,9 @@ class TweetBase(object):
     def cullTwitterPunctuation(self):
         cullList = ["#","@","http","://",".co"]
         for tweet in self.data:
-            dart = tweet['text'].split(" ")
+            tweet['text'].replace("’","'")
+            tweet['text'] = re.sub(r'\w*([#@]|http\:\/\/|.co\/)\w*',"",tweet['text'],)
+            """dart = tweet['text'].split(" ")
             addback = ""
             for word in dart:
                 culled = False
@@ -57,7 +63,7 @@ class TweetBase(object):
                     addback += word + " "
                     if "—" in addback:
                         addback.replace("—","-")
-            tweet['text'] = addback
+            tweet['text'] = addback"""
 
     
     def regexStringList(self,expression):
@@ -93,25 +99,28 @@ class TweetBase(object):
 
 
     #accepts a list of filters, tries to find all the 
-    def ANDorFILTER(self,filtersList):
+    def ANDorFILTER(self,filtersList,caseless=False):
         retState = []
         for tweet in self.data:
+            tweettext = tweet['text']
+            if caseless:
+                tweettext = tweet['text'].lower()
             allFound = True
             for filter in filtersList:
                 if isinstance(filter,list):
-                    if not any([kw in tweet['text'] for kw in filter]):
+                    if not any([kw in tweettext for kw in filter]):
                         allFound = False
                         break
                 elif isinstance(filter,re.Pattern):
-                    if re.match(filter,tweet['text']) == False:
+                    if re.match(filter,tweettext) == False:
                         allFound = False
                         break
                 elif isinstance(filter,tuple):
-                    if filter[0] in tweet['text']:
+                    if filter[0] in tweettext:
                         allFound = False
                         break
                 else:
-                    if filter not in tweet['text']:
+                    if filter not in tweettext:
                         allFound = False
                         break
             if allFound:

@@ -10,14 +10,18 @@ spacyNLP = spacy.load("en_core_web_sm")
 synonyms = {"television":["tv"],"picture":["motion picture","movie","film","feature film"],"film":["movie","feature film"],"movie":["motion picture","film"]}
 
 class AwardParser(object):
-    def __init__(self,year):
-        self.datab = TweetBase("gg2020.json")
+    def __init__(self,year,filepath = None):
+        if filepath == None:
+            self.datab = TweetBase("gg" + str(year) + ".json",year)
+        else:
+            self.datab = TweetBase(filepath,year)
         self.datab.cullTwitterPunctuation()
         self.awardFilter = self.datab.anyStringList(["award for Best "])
         self.actualAwards = []
         self.year = year
 
     def awardFinder2(self):
+        docs = []
         awards = {}
         firstcull = self.datab.regexStringList(" Best [A-Z]")
 
@@ -53,15 +57,60 @@ class AwardParser(object):
                     break
             while splt[end - 1] in ["by","in","a","an","-","or","for","Golden","Globe","To","Award"]:
                 end -= 1
-            for punct in ["!",".",":"]:
-                splt[end-1].replace(punct,"")
+            for punct in ["!",".",":",","]:
+                splt[end-1] = splt[end-1].replace(punct,"")
             result = " ".join(splt[indx:end])
-            if result.lower() in awards and " - " in result:
+            if result.lower() in awards:
                 awards[result.lower()] += 1
             else:
                 awards[result.lower()] = 1
 
-        print(sorted(awards,key=awards.get))
+        awardlist = sorted(awards,key=awards.get)
+        response = {}
+
+        for award in awardlist:
+            strl = award
+            strl = strl.replace(","," -")
+            strl = strl.replace("tv","television")
+            if "-" in award:
+                if award.index("-") < 14:
+                    continue
+                elif "-" in award[award.index("-") + 1:]:
+                    award = award[0:award[award.index("-") + 1:].index("-")]
+            if len(award) < 22:
+                continue
+            if " at " in award or "you" in award:
+                continue
+            response[strl] = awards[award]
+        
+        graph = {}
+        roots = []
+        others = []
+        for award in response:
+            children = []
+            parents = []
+            for awardz in response:
+                if award != awardz:
+                    leveler = self.SameAward(award,awardz)
+                    if leveler == award:
+                        children.append(awardz)
+                        #awards[awardz] = -10
+                    if leveler == awardz:
+                        parents.append(awardz)
+            graph[award] = [children,parents]
+            if parents == [] and children != []:
+                roots.append(award)
+            else:
+                others.append(award)
+
+        for root in roots:
+            for child in graph[root][0]:
+                response[root] += response[child] / len(graph[child][1])
+
+        for unit in others:
+            response[unit] = -1 
+
+        print([(x, response[x]) for x in response if response[x] > 1])
         
         
             
@@ -108,7 +157,13 @@ class AwardParser(object):
             print(doc[awardRange[0]:awardRange[1]])          
     
     def HostFinder(self):
-        firstcull = self.datab.anyStringList(["is hosting"])
+        firstcull = self.datab.anyStringList([" is hosting"])
+        secondcull = self.datab.anyStringList([" are hosting"])
+        
+        multihost = len(secondcull) > len(firstcull)
+
+        if multihost: firstcull = secondcull
+
         docs = []
         hostVote = {}
 
@@ -123,6 +178,10 @@ class AwardParser(object):
                     else:
                         hostVote[ent.lower_] = 1
         
+        if multihost:
+            hVs = sorted(hostVote,key = hostVote.get)
+            return [hVs[-1],hVs[-2]]
+
         return max(hostVote,key=hostVote.get)
 
     def WinnerFinder(self, award):
@@ -141,7 +200,8 @@ class AwardParser(object):
                     else:
                         winVote[ent.lower_] = 1
         
-
+        if len(winVote) == 0:
+            return ""
         return max(winVote, key=winVote.get)
 
     def acceptActualAwards(self, actualList):
@@ -379,6 +439,110 @@ class AwardParser(object):
 
         return -1
 
+
+    def AwardGroupParse(self,award):
+        award1 = award.lower()
+        for filtere in [".",", i",","," a "," an ", " or ","!",":",";","\'","\"","\n"]:
+            award1 = award1.replace(filtere," ")
+        for filterd in [" in ", " by ", " - "]:
+            award1 = award1.replace(filterd,"|")
+
+        award1.replace("tv","television")
+
+        split1 = award1.split("|")
+        split2 = []
+        for segment in split1:
+            split2.append(segment.split(" "))
+        
+        return split2
+
+    def SameAward(self,groups1,groups2):
+        TotalMatch1 = True
+        TotalMatch2 = True
+        EveryWordMatch1 = True
+        EveryWordMatch2 = True
+
+        for group in groups1:
+            onefound = False
+            for word in group:
+                found = False
+                for groupb in groups2:
+                    if word in groupb:
+                        found = True
+                        onefound = True
+                        break
+                if found == False:
+                    EveryWordMatch1 = False
+                else:
+                    break
+            if onefound == False:
+                TotalMatch1 = False
+        
+        for groupb in groups2:
+            onefound = False
+            for word in groupb:
+                found = False
+                for groupa in groups1:
+                    if word in groupa:
+                        found = True
+                        onefound = True
+                        break
+                if found == False:
+                    EveryWordMatch2 = False
+                else:
+                    break
+            if onefound == False:
+                TotalMatch2 = False
+
+        if EveryWordMatch1 and EveryWordMatch2:
+            return 4
+        if TotalMatch1 and TotalMatch2 and EveryWordMatch1:
+            return 2
+        if TotalMatch1 and TotalMatch2 and EveryWordMatch2:
+            return 1
+        if TotalMatch1 and TotalMatch2:
+            return 3
+        else:
+            return 0
+
+    """def SameAwardB(self,awarda,awardb):
+        award1 = awarda.lower()
+        award2 = awardb.lower()
+        for filtere in ["-",".",", i",","," in "," by "," a "," an ", " or ","!",":",";","\'","\"","\n"]:
+            award1 = award1.replace(filtere," ")
+            award2 = award2.replace(filtere," ")
+        award1.replace("tv","television")
+        award2.replace("tv","television")
+
+        split1 = award1.split(" ")
+        split2 = award2.split(" ")
+
+        TotalMatch = True
+        Tmatch2 = True
+        for word1 in split1:
+            if word1 not in award2:
+                TotalMatch = False
+                break
+        for word2 in split2:
+            if word2 not in award1:
+                Tmatch2 = False
+                break
+
+        if TotalMatch and Tmatch2:
+            if " - " in awarda and " - " not in awardb:
+                return awarda
+            if " - " in awardb and " - " not in awarda:
+                return awardb
+            if len(awarda) >= len(awardb):
+                return awarda
+            else:
+                return awardb
+        if TotalMatch:
+            return awardb
+        if Tmatch2:
+            return awarda
+        return False"""
+
     #accepts a sorted dictionary of awards, determines all similarities, returns replaced dictionary
     def AwardSimilarityCombo(self,dicti):
         i = 1
@@ -399,21 +563,67 @@ class AwardParser(object):
                     dicti.pop(key,1)
                 elif sim == 1:
                     dicti[key] += dicti[key2]
-                    dicti.pop(key2,1)
-                    
+                    dicti.pop(key2,1)   
 
+    def NominatedForParser(self,award,nomType):
+        groups = self.AwardGroupParse(award)
 
+        filters = [[" nomin"]]
+        filters.extend(groups)
+        nominees = {}
+        if nomType == "MEDIA":
+            filters.append(["\"","\'"])
+            firstcull = self.datab.ANDorFILTER(filters,True)
+            for tweet in firstcull:
+                mentionedMovies = list(re.finditer(r"([\"'])(?:(?=(\\?))\2.)*?\1", tweet))
+                for mMovie in mentionedMovies:
+                    if nominees[mMovie]:
+                        nominees[mMovie]+=1
+                    else:
+                        nominees[mMovie]=1
+
+        else:
+            firstcull = self.datab.ANDorFILTER(filters,True)
+            for tweet in firstcull:
+                doc = spacyNLP(tweet)
+                for ent in doc.ents:
+                    if ent.label_ == "PERSON":
+                        if nominees[ent.text]:
+                            nominees[ent.text]+=1
+                        else:
+                            nominees[ent.text] = 1
+
+        return nominees
+
+    def BeatParser(self,award,winner,nomtype):
+        filters = [winner,[" beat"," rob"," stole"]]
+        firstcull = self.datab.ANDorFILTER(filters,True)
+            
+        nominees = {}
+        for tweet in firstcull:
+
+            doc = spacyNLP(tweet)
+            for ent in doc.ents:
+                if ent.label_ == "PERSON" and ent.text not in winner:
+                    if nominees[ent.text]:
+                        nominees[ent.text]+=1
+                    else:
+                        nominees[ent.text]=1
+            
         
+        return nominees
 
+            
+    def firstNameFinder(self, lastName):
+        filters = [lastName]
+        firstcull = self.datab.ANDorFILTER(filters,True)
 
-
+        for tweet in firstcull:
+            doc = spacyNLP(tweet)
+            for ent in doc.ents:
+                if ent.label_ == "PERSON" and lastName in ent.text and lastName!=ent.text:
+                    return ent.text
                 
-
-
-         
-
-    def NominatedForParser(self,filters):
-        return 0
 
     def NomineeListParser(self,filters):
         return 0
@@ -421,34 +631,37 @@ class AwardParser(object):
     def AllPresentersFinder(self,filters):
         return 0
 
-    def PresentedTogetherParser(self,filters):
+    def PresenterFinder2(self, award):
+        groups = self.AwardGroupParse(award)
+        filters = [[" present"," announc"]]
+        filters.extend(groups)
+        firstcull = self.datab.ANDorFILTER(filters,True)
+
+        presenters = {}
+        for tweet in firstcull:
+            doc = spacyNLP(tweet)
+            for ent in doc.ents:
+                if ent.label_ == "PERSON":
+                    if ent.text in presenters:
+                        presenters[ent.text] += 1
+                    else:
+                        presenters[ent.text] = 1
+
+    """def PresentedTogetherParser(self,filters):
         return 0
 
     def TimeBasedPresentation(self,filters):
-        return 0
+        return 0"""
     
     
-ap = AwardParser(2020)
+ap = AwardParser(2013)
 
 #ap.TheyWonAwardParser([["Best","best"],["Limited Series","limited Series","limited series"],["Actress","actress"],["Supporting"]],"PERSON")
 
-ap.awardFinder2()
-#print(ap.VariantSimilarity("Best Supporting Actress in a Motion Picture","Best Performance by an Actress in a Supporting Role in a Motion Picture"))
-#ap.CongratulationsParser(["Best Performance by an Actor in a Television Series—Musical or Comedy"],"PERSON")
-# 'best television limited series or motion picture made for television'
-# cecil b. demille award
+print(ap.datab.ANDorFILTER([["les mis"],[" beat", " stole"]],True))
 
-
-
-#p.NomineeFinder("Drama","TITLE")
-
-#ap.PresenterFinder("Best Director","Sam Mendes")
-
-
-
-
-
-
-
-
-
+#print(ap.awardFinder2())
+#print(ap.SameAward("best actor in a motion picture drama","best performance by an actor in a motion picture - drama")
+#)
+#print(ap.HostFinder()) 
+#print(ap.datab.ANDorFILTER([])
