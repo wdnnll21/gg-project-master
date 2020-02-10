@@ -1,11 +1,14 @@
 import json
 import re
 from bisect import bisect_left
+from HardQuery import categories
 
 class TweetBase(object):
     def __init__(self, filename, year):
         super(TweetBase, self)
         self.data = []
+        self.year = year
+        self.HardQueries = {}
         if year == 2020:
             with open(filename,encoding="utf8") as json_tweets:
                 for line in json_tweets:
@@ -13,6 +16,9 @@ class TweetBase(object):
         else: 
             with open(filename, encoding="utf8") as json_tweets:
                 self.data = json.load(json_tweets)
+
+    def PerformHardQueries(self) :
+        for 
 
     #returns a list of tweets that contain all filter strings
     def filterStringList(self,filtersList):
@@ -46,25 +52,10 @@ class TweetBase(object):
 
     #removes hashtags, usernames, and links from tweetbase
     def cullTwitterPunctuation(self):
-        cullList = ["#","@","http","://",".co"]
+        self.basiccull()
         for tweet in self.data:
-            tweet['text'].replace("’","'")
-            tweet['text'] = re.sub(r'\w*([#@]|http\:\/\/|.co\/)\w*',"",tweet['text'],)
-            """dart = tweet['text'].split(" ")
-            addback = ""
-            for word in dart:
-                culled = False
-                for cull in cullList:
-                    if cull in word:
-                        dart.remove(word)
-                        culled = True
-                        break
-                if not culled:
-                    addback += word + " "
-                    if "—" in addback:
-                        addback.replace("—","-")
-            tweet['text'] = addback"""
-
+            tweet['text'] = tweet['text'].replace("’","'").replace("—","-")
+            tweet['text'] = re.sub(r'\w*([#@]|http|\:\/\/|.co\/)\w*',"",tweet['text'])
     
     def regexStringList(self,expression):
         retState = []
@@ -77,13 +68,16 @@ class TweetBase(object):
         return retState
 
     def timeFrameFilter(self,time1,time2):
-        times = [tweet['created_at'] for tweet in self.data]
+        if self.year == 2020:
+            times = [tweet['created_at'] for tweet in self.data]
+        else:
+            times = [tweet['timestamp_ms'] for tweet in self.data]
         times.reverse()
         early = len(self.data) - bisect_left(times,time1)
         late = len(self.data) - bisect_left(times,time2)
         
         filtered = []
-        print(self.data[early])
+        #print(self.data[early])
         for tweet in self.data[late:early]:
             filtered.append(tweet['text'])
 
@@ -92,15 +86,24 @@ class TweetBase(object):
 
     def earliestMention(self,filtersList):
         for tweet in reversed(self.data):
-            text = tweet['text']
+            text = tweet['text'].lower()
 
             if all([kw in text for kw in filtersList]):
-                return tweet['created_at']
+                if self.year == 2020:
+                    return tweet['created_at']
+                else:
+                    return tweet['timestamp_ms']
 
 
     #accepts a list of filters, tries to find all the 
     def ANDorFILTER(self,filtersList,caseless=False):
         retState = []
+        dataset = []
+        if filtersList[0] in self.HardQueries:
+            del filtersList[0]
+            dataset = HardQueries[filtersList[0]]
+        else:
+            
         for tweet in self.data:
             tweettext = tweet['text']
             if caseless:
@@ -112,11 +115,11 @@ class TweetBase(object):
                         allFound = False
                         break
                 elif isinstance(filter,re.Pattern):
-                    if re.match(filter,tweettext) == False:
+                    if re.search(filter,tweettext) == None:
                         allFound = False
                         break
                 elif isinstance(filter,tuple):
-                    if filter[0] in tweettext:
+                    if any([kw in tweettext for kw in filter]):
                         allFound = False
                         break
                 else:
@@ -128,6 +131,16 @@ class TweetBase(object):
 
         return retState
 
+    def getRegexFullMatchOnly(self,regex):
+        retState = []
+        for tweet in self.data:
+            ser = re.search(regex,tweet['text'])
+            if ser:
+                retState.append(ser[0])
+
+        return retState
+
+
     def MentionedTogether(self,string1,string2):
         return len(self.ANDorFILTER([string1,string2]))
 
@@ -136,6 +149,13 @@ class TweetBase(object):
         mention2 = len(self.anyStringList(string2))
         together = self.MentionedTogether(string1,string2)
         return together / (mention1+mention2-together)
+
+    def basiccull(self):
+        data2 = []
+        for tweet in self.data:
+            if "RT @" not in tweet['text']:
+                data2.append(tweet)
+        self.data = data2
         
                          
 

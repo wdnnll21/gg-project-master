@@ -19,8 +19,11 @@ def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
     of this function or what it returns.'''
     # Your code here
-    return OFFICIAL_AWARDS_1315
-    return ap.awardFinder()
+    global ap
+    if ap == None or ap.year != year:
+        ap = AwardParser(year)
+    print("got awards",year)
+    return ap.awardParseRegex()
     
 
 def get_nominees(year):
@@ -28,23 +31,29 @@ def get_nominees(year):
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     # Your code here
-    nominees = {}
-    for award in OFFICIAL_AWARDS_1315:
-        nominees[award] = []
-    return nominees
+    global ap
+    if ap == None or ap.year != year:
+        ap = AwardParser(year)
+    if year in ['2013','2015']:
+        ap.acceptActualAwards(OFFICIAL_AWARDS_1315)
+        if len(ap.winners) == 0:
+            get_winner(year)
+        return ap.FindAllNominees()
+    else:
+        ap.acceptActualAwards(OFFICIAL_AWARDS_1819)
+        if len(ap.winners) == 0:
+            get_winner(year)
+        return ap.FindAllNominees()
 
 def get_winner(year):
     '''Winners is a dictionary with the hard coded award
     names as keys, and each entry containing a single string.
     Do NOT change the name of this function or what it returns.'''
-    nominees = {}
-    for award in OFFICIAL_AWARDS_1315:
-        nominees[award] = "argo"
-    return nominees
-    
     global ap
     if ap == None or ap.year != year:
         ap = AwardParser(year)
+    if ap.year == year and len(ap.winners) > 1:
+        return ap.winners
     if year in ['2013','2015']:
         ap.acceptActualAwards(OFFICIAL_AWARDS_1315)
         return ap.FindAllWinners()
@@ -52,18 +61,20 @@ def get_winner(year):
         ap.acceptActualAwards(OFFICIAL_AWARDS_1819)
         return ap.FindAllWinners()
 
-
-
-
 def get_presenters(year):
     '''Presenters is a dictionary with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change the
     name of this function or what it returns.'''
     # Your code here
-    presenters = {}
-    for award in OFFICIAL_AWARDS_1315:
-        presenters[award] = []
-    return presenters
+    global ap
+    if ap == None or ap.year != year:
+        ap = AwardParser(year)
+    if year in ['2013','2015']:
+        ap.acceptActualAwards(OFFICIAL_AWARDS_1315)
+        return ap.AllPresentersFinder()
+    else:
+        ap.acceptActualAwards(OFFICIAL_AWARDS_1819)
+        return ap.AllPresentersFinder()
 
 def pre_ceremony():
     '''This function loads/fetches/processes any data your program
@@ -83,3 +94,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+#get_winner(2020)
+#print(get_presenters(2020))
