@@ -528,8 +528,37 @@ class AwardParser(object):
                 vote[string] = 1
 
         return [x for x in vote if vote[x] > 1]
+
+
+    def WeinsteinMachine(self):
+        firstcull = self.datab.ANDorFILTER([["Weinstein","Harvey Weinstein","Harvey","Weinzstein","Wienstien","Weinstien"]])
+        context = {}
+        mentionTimes = len(firstcull)
+        for tweet in firstcull:
+            doc = spacyNLP(tweet)
+            idx = 0
+            for word in doc:
+                if word.text in ["Weinstein","Harvey"]:
+                    idx = word.i
+                    break
+            start = max(idx - 3,0)
+            end = min(idx + 3, len(list(doc)))
+            for word in doc[start:end+1]: 
+                if word.tag_ in ["NNP","NNP","NNPS","NNS","NN","VBD","VBG","VBP","VBZ"] and word.text not in ["Weinstein","Harvey","Golden","Globes"] and len(word.text) > 3:
+                    if word.text in context:
+                        context[word.text]+=1
+                    else:
+                        context[word.text]=1
+                
+        
+        chunky = sorted(context,key=context.get)
+        dictma = {'unique-mentions':mentionTimes,'most-associated-terms':chunky[-7:]}
+        return dictma
+                
+
             
 
-#ap = AwardParser(2015)
+ap = AwardParser(2013)
+print(ap.WeinsteinMachine())
 
 #print(ap.getAllPresenters())#print(ap.datab.ANDorFILTER([])
