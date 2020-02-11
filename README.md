@@ -9,4 +9,12 @@ The basic approach is to narrow the field of tweets with broad-level keywords an
 
 Please note that version management was primarily done locally through VS Code and commits were pushed from a single machine because our team elected to work on said machine during meetings through the LiveShare plugin.
 
+Extra Parsing Methods:
+
+1.) Best Dressed - Returns the Top 5 People referenced as being beautiful or dressed well, a Golden Globes standard.
+
+2.) Drinking Games - Returns a list of proposed drinking games, seemingly the most common reason to watch the Globes at all.
+
+3.) Weinstein Association Tracker - Returns a list of one-word associations to track the history of mentions of an infamous Hollywood exec as mentioned in regards to Hollywood before and after public disgrace. 
+
 
