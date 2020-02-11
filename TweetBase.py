@@ -8,7 +8,6 @@ class TweetBase(object):
         super(TweetBase, self)
         self.data = []
         self.year = year
-        self.HardQueries = {}
         if year == 2020:
             with open(filename,encoding="utf8") as json_tweets:
                 for line in json_tweets:
@@ -17,9 +16,15 @@ class TweetBase(object):
             with open(filename, encoding="utf8") as json_tweets:
                 self.data = json.load(json_tweets)
 
-    def PerformHardQueries(self) :
-        for 
-
+    def PopulateHardQueries(self) :
+        HardQueries = {}
+        for key in categories:
+            if isinstance(categories[key], list):
+                HardQueries[key] = self.ANDorFILTER(categories[key],True)
+            elif isinstance(categories[key], str):
+                HardQueries[key] = HardQueries[categories[key]]
+        return HardQueries
+            
     #returns a list of tweets that contain all filter strings
     def filterStringList(self,filtersList):
         retState = []
@@ -99,10 +104,6 @@ class TweetBase(object):
     def ANDorFILTER(self,filtersList,caseless=False):
         retState = []
         dataset = []
-        if filtersList[0] in self.HardQueries:
-            del filtersList[0]
-            dataset = HardQueries[filtersList[0]]
-        else:
             
         for tweet in self.data:
             tweettext = tweet['text']
