@@ -132,16 +132,21 @@ class AwardParser(object):
         for aA in self.actualAwards:
             nomType = "MEDIA"
             
-            if "act" in aA or "direct" in aA or "screenp" in aA:
+            if "act" in aA or "direct" in aA or "screenp" in aA or "cec" in aA:
                 nomType = "PERSON"
             
+            nN = self.newNominees(aA)
+            if nN != []:
+                allNominees[aA] = nN
+                continue
+
             mergedNominees = self.NominatedForParser(aA,nomType)
             if aA in self.winners and self.winners[aA] not in [False,None,'']:
                 mergedNominees.update(self.BeatParser([self.winners[aA]],nomType))
 
             
-            if len(mergedNominees) > 5:
-                allNominees[aA] = sorted(mergedNominees,key=mergedNominees.get)[-5:]
+            if len(mergedNominees) > 9:
+                allNominees[aA] = sorted(mergedNominees,key=mergedNominees.get)[-9:]
             else:
                 allNominees[aA] = list(mergedNominees)
         
@@ -360,7 +365,7 @@ class AwardParser(object):
         return nominees
 
     def BeatParser(self,winner,nomtype):
-        filters = [winner,[" beat"," rob"," stole"," steal"]]
+        filters = [winner,[" beat"," rob"," stole"," steal"],(" de "," en "," y "," lo ", " la ", " el ", " los ")]
         firstcull = self.datab.ANDorFILTER(filters,True)
             
         nominees = {}
@@ -368,7 +373,7 @@ class AwardParser(object):
             doc = spacyNLP(tweet)
             if nomtype == "PERSON":
                 for ent in doc.ents:
-                    if ent.label_ == "PERSON" and ent.text not in winner and "olden" not in ent.lower_:
+                    if ent.label_ == "PERSON" and ent.lower_ not in winner and "olden" not in ent.lower_:
                         if ent.lower_ in nominees:
                             nominees[ent.lower_]+=1
                         else:
@@ -376,7 +381,23 @@ class AwardParser(object):
             else:
                 for word in doc:
                     if word.dep_ == "dobj" and word.head.text in ["beat","beats","rob","robbed","stole","steal","steals"] and word.text[0].isupper():
-                        a = self.MovieNameFinder(word.text).replace("\"","").replace("\'","").lower()
+                        titleIndex = word.i+1
+                        movieTitle = [word.text]
+                        nextWord = doc[titleIndex].text
+                        titleComplete = False
+                        while not titleComplete and titleIndex < len(doc) - 1:
+                            if nextWord[0].isupper():
+                                movieTitle.append(nextWord)
+                                titleIndex+=1
+                                nextWord = doc[titleIndex].text
+                            elif not nextWord[0].isupper() and nextWord in ["of","the","in","a"]:
+                                movieTitle.append(nextWord)
+                                titleIndex+=1
+                                nextWord = doc[titleIndex].text
+                            else:
+                                titleComplete = True
+                        movieTitle = " ".join(movieTitle)
+                        a = self.MovieNameFinder(movieTitle).replace("\"","").replace("\'","").lower()
                         if a in nominees:
                             nominees[a]+=1
                         else:
@@ -434,17 +455,58 @@ class AwardParser(object):
         
         firstcull = self.datab.ANDorFILTER(filters,True)
 
-        presenters = set()
+        presenters = {}
         fullName = re.compile(r"^([A-Z][a-z]+ (?:[A-Z][a-z]+)*)$")
 
         for tweet in firstcull:
             doc = spacyNLP(tweet)
 
             for ent in doc.ents:
-                if ent.label_ == "PERSON" and fullName.match(ent.text):
-                    presenters.add(ent.text)
+                if ent.label_ == "PERSON" and fullName.match(ent.text) and ent.text in presenters:
+                    presenters[ent.text]+=1
+                elif ent.label_ == "PERSON" and fullName.match(ent.text) and not ent.text in presenters and not "olden" in ent.text and not "present" in ent.lower_ and not "win"  in ent.lower_:
+                    presenters[ent.text]=1
+
+        '''
+        finalPresenters = {}
+        self.PopulateHardQueries()
         
-        return presenters
+        for name in presenters:
+            for award, awardTweets in self.HardQueries.items():
+                for tweet in awardTweets:
+                    if "present" in tweet and "win" not in tweet:
+                        if any(name in tweet.lower() for name in name.split()) and award in finalPresenters:
+                            if any(name in finalPresenters[award] for name in name.split()):
+                                continue
+                            else:
+                                finalPresenters[award].append(name)
+                                break
+                        elif any(name in tweet.lower() for name in name.split()) and not award in finalPresenters:
+                            finalPresenters[award] = [name]
+        '''
+        finalPresenters = {}
+        self.PopulateHardQueries()
+        presenters = set(presenters)
+        culledPresenters = set()
+
+        for presenter in presenters:
+            if not 'win' in presenter.lower() and not 'olden'  in presenter.lower() and not 'best'  in presenter.lower() and not presenter.lower() in self.winners.values():
+                culledPresenters.add(presenter)
+
+        for award, awardTweets in self.HardQueries.items():
+            for tweet in awardTweets:
+                for name in culledPresenters:
+                    if name in tweet and 'present' in tweet.lower() and not 'win' in tweet.lower() and award in finalPresenters:
+                        if not name.lower() in finalPresenters[award]:
+                            finalPresenters[award].append(name.lower())
+                    elif name in tweet and 'present' in tweet.lower() and not 'win'  in tweet.lower() and not award in finalPresenters:
+                        finalPresenters[award] = [name.lower()]
+
+        for award in self.HardQueries:
+            if not award in finalPresenters:
+                finalPresenters[award] = self.PresenterFinder2(award)
+
+        return finalPresenters
 
     def PresenterFinder2(self, award):
         self.PopulateHardQueries()
@@ -490,6 +552,10 @@ class AwardParser(object):
 
     def awardparseOpen(self):
         awards = []
+
+        format1 = [re.compile("^(BEST|best|Best) [A-Z]")]
+        format2 = [re.compile("Best(([\s][A-Z\-][a-z,]{2,})| in a| in an| by an| or| \-| for)+")]
+
         firstcull = self.datab.ANDorFILTER([re.compile("^Best [A-Z]"),re.compile("   \n$"),"\n\n"])
         for string in firstcull:
             awards.append(string[0:string.index("\n\n")])
@@ -502,6 +568,35 @@ class AwardParser(object):
                 awards.append(string[string.index(" - "):]) 
 
         return awards
+
+    def awardParseRegex2(self):
+        #regexParse = self.datab.getRegexFullMatchOnly(re.compile("Best(([\s][A-Z][a-z,\-]{2,})| in a| in an| by an| or| \-| for)+([\s][A-Z][a-z]{2,})"))
+        regexParse = self.datab.getRegexFullMatchOnly(re.compile("^BEST [A-Z\-, ]+"))
+        awardDict = {}
+
+        stopwords = ["joke","carpet","dress","olden","look","moment","award","the","--","hosts"]
+        for item in regexParse:
+            add = True
+            if any(kw in item.lower() for kw in stopwords) or len(item.split(" ")) < 4:
+                add = False
+
+            dash = item.split(" - ")
+            if len(dash) > 2:
+                item = " - ".join([dash[0],dash[1]])
+            if len(dash) == 2 and len(dash[1].split(" ")) > 3:
+                add = False
+            
+            if "-" in item[-5:]:
+                add = False
+
+            if add:
+                if item in awardDict:
+                    awardDict[item]+=1
+                else:
+                    awardDict[item]=1
+
+        print(sorted(awardDict))
+
 
     def awardParseRegex(self):
         print("parsing awards",self.year)
@@ -554,11 +649,40 @@ class AwardParser(object):
         chunky = sorted(context,key=context.get)
         dictma = {'unique-mentions':mentionTimes,'most-associated-terms':chunky[-7:]}
         return dictma
+
+    def newNominees(self,award):
+        self.PopulateHardQueries()
+
+        query = self.HardQueries[award]
+        filledQ = list(filter(lambda tweet: "nominees:" in tweet and not any(kw in tweet for kw in ["present","won","win","not","n't","goes","?"]),query))
+
+        for string in filledQ:
+            spd = string[string.index("nominees:")+9:]
+            a = spd.replace("and", "").split(",")
+            if len(a) > 1:
+                return a
+        
+        return []
+
+            
+
+
+        
                 
 
             
 
-ap = AwardParser(2013)
-print(ap.WeinsteinMachine())
-
+ap = AwardParser(2015)
+print(ap.awardParseRegex2())
+#ap.awardParseRegex2()
+#print(ap.WeinsteinMachine())
+#OFFICIAL_AWARDS_1315 = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
+#ap.acceptActualAwards(OFFICIAL_AWARDS_1315)
+#ap.FindAllWinners()
+#print(ap.newNominees())
+#print(ap.BeatParser("how to train your dragon 2","MEDIA"))
+#print(ap.newNominees())
+#print(ap.FindAllNominees())
+#print(ap.AllPresentersFinder())
+#print(ap.getAllPresenters())
 #print(ap.getAllPresenters())#print(ap.datab.ANDorFILTER([])

@@ -11,10 +11,10 @@ Please note that version management was primarily done locally through VS Code a
 
 Extra Parsing Methods:
 
-1.) Best Dressed - Returns the Top 5 People referenced as being beautiful or dressed well, a Golden Globes standard.
+1.) Best Dressed - Returns a list of the Top 5 People referenced as being beautiful or dressed well in public commentary, a Golden Globes Red Carpet standard.
 
 2.) Drinking Games - Returns a list of proposed drinking games, seemingly the most common reason to watch the Globes at all.
 
-3.) Weinstein Association Tracker - Returns a list of one-word associations to track the history of mentions of an infamous Hollywood exec as mentioned in regards to Hollywood before and after public disgrace. 
+3.) Weinstein Association Tracker - Returns a list of one-word associations to track the history of mentions of an infamous Hollywood exec in regards to the scene of Hollywood stars before and after public disgrace.
 
 

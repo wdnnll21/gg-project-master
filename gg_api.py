@@ -71,10 +71,10 @@ def get_presenters(year):
         ap = AwardParser(year)
     if year in ['2013','2015']:
         ap.acceptActualAwards(OFFICIAL_AWARDS_1315)
-        return ap.AllPresentersFinder()
+        return ap.getAllPresenters()
     else:
         ap.acceptActualAwards(OFFICIAL_AWARDS_1819)
-        return ap.AllPresentersFinder()
+        return ap.getAllPresenters()
 
 def pre_ceremony():
     '''This function loads/fetches/processes any data your program
