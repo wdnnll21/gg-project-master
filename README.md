@@ -50,7 +50,5 @@ ap.Top5BestDressed()
 ap.DrinkingGames()
 ap.WeinsteinMachine()
 
-Notes on our Method
-
 
 
