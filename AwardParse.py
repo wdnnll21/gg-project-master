@@ -1,10 +1,12 @@
 import spacy
 from spacy.matcher import PhraseMatcher
 from TweetBase import TweetBase
+import HardQuery
 from spacy.symbols import *
 import re
 from datetime import datetime
 from datetime import timedelta
+from random import randint
 
 spacyNLP = spacy.load("en_core_web_sm")
 synonyms = {"television":["tv"],"picture":["motion picture","movie","film","feature film"],"film":["movie","feature film"],"movie":["motion picture","film"]}
@@ -313,7 +315,7 @@ class AwardParser(object):
         
         return max(winVote, key=winVote.get)
 
-    def AwardGroupParse(self,award):
+    """def AwardGroupParse(self,award):
         award1 = award.lower()
         for filtere in [".",", i",","," a "," an ", " or ","!",":",";","\'","\"","\n"]:
             award1 = award1.replace(filtere," ")
@@ -327,7 +329,7 @@ class AwardParser(object):
         for segment in split1:
             split2.append(segment.split(" "))
         
-        return split2
+        return split2"""
 
     def NominatedForParser(self,award,nomType):
         self.PopulateHardQueries()
@@ -363,7 +365,7 @@ class AwardParser(object):
                             nominees[ent.lower_] = 1
 
         return nominees
-
+    
     def BeatParser(self,winner,nomtype):
         filters = [winner,[" beat"," rob"," stole"," steal"],(" de "," en "," y "," lo ", " la ", " el ", " los ")]
         firstcull = self.datab.ANDorFILTER(filters,True)
@@ -381,28 +383,11 @@ class AwardParser(object):
             else:
                 for word in doc:
                     if word.dep_ == "dobj" and word.head.text in ["beat","beats","rob","robbed","stole","steal","steals"] and word.text[0].isupper():
-                        titleIndex = word.i+1
-                        movieTitle = [word.text]
-                        nextWord = doc[titleIndex].text
-                        titleComplete = False
-                        while not titleComplete and titleIndex < len(doc) - 1:
-                            if nextWord[0].isupper():
-                                movieTitle.append(nextWord)
-                                titleIndex+=1
-                                nextWord = doc[titleIndex].text
-                            elif not nextWord[0].isupper() and nextWord in ["of","the","in","a"]:
-                                movieTitle.append(nextWord)
-                                titleIndex+=1
-                                nextWord = doc[titleIndex].text
-                            else:
-                                titleComplete = True
-                        movieTitle = " ".join(movieTitle)
-                        a = self.MovieNameFinder(movieTitle).replace("\"","").replace("\'","").lower()
+                        a = self.MovieNameFinder(word.text).replace("\"","").replace("\'","").lower()
                         if a in nominees:
                             nominees[a]+=1
                         else:
                             nominees[a]=1
-                        break
         
         return nominees
 
@@ -540,32 +525,44 @@ class AwardParser(object):
         firstcull = self.datab.ANDorFILTER([["drinking game", "drink!", "take a drink", "drink every", "drink when"]])
         firstcull = list(set(firstcull))
 
+        games = []
+
         for tweet in firstcull:
-            ltweet = tweet.lower()
+            ltweet = tweet.lower().replace("\n"," | ")
+            if any(kw in tweet for kw in ["|","rules","  "]):
+                continue
             if "drinking game:" in ltweet:
-                print(tweet[ltweet.index("game:")+5:])
+                games.append(tweet[ltweet.index("game:")+5:])
                 continue
             for st in ["when "," if "," every "]:
                 if st in ltweet:
-                    print(tweet[ltweet.index(st):])
+                    games.append(tweet[ltweet.index(st):])
                     continue
+        rns = []
+        i = 0
+        while i < 10:
+            rand = randint(0,len(games)-1)
+            if games[rand] not in rns:
+                rns.append(games[rand])
+            i+=1
 
-    def awardparseOpen(self):
+        return rns
+
+    """def awardparseOpen(self):
         awards = []
 
-        format1 = [re.compile("^(BEST|best|Best) [A-Z]")]
-        format2 = [re.compile("Best(([\s][A-Z\-][a-z,]{2,})| in a| in an| by an| or| \-| for)+")]
-
         firstcull = self.datab.ANDorFILTER([re.compile("^Best [A-Z]"),re.compile("   \n$"),"\n\n"])
+        if "-" in firstcull[0]:
+            return firstcull
         for string in firstcull:
             awards.append(string[0:string.index("\n\n")])
-        if firstcull == []:
-            firstcull = self.datab.ANDorFILTER([re.compile("^Best [A-Z]"),re.compile("[a-z] $"),[" : "]])
-            for string in firstcull:
-                awards.append(string[0:string.index(": ")])
-            secondcull = self.datab.ANDorFILTER([re.compile("[a-z] - Best [A-Z]"),re.compile("[a-z][a-z]$")])
-            for string in secondcull:
-                awards.append(string[string.index(" - "):]) 
+        
+        firstcull = self.datab.ANDorFILTER([re.compile("^Best [A-Z]"),re.compile("[a-z] $"),[" : "]])
+        for string in firstcull:
+            awards.append(string[0:string.index(": ")])
+        secondcull = self.datab.ANDorFILTER([re.compile("[a-z] - Best [A-Z]"),re.compile("[a-z][a-z]$")])
+        for string in secondcull:
+            awards.append(string[string.index(" - "):]) 
 
         return awards
 
@@ -574,7 +571,7 @@ class AwardParser(object):
         regexParse = self.datab.getRegexFullMatchOnly(re.compile("^BEST [A-Z\-, ]+"))
         awardDict = {}
 
-        stopwords = ["joke","carpet","dress","olden","look","moment","award","the","--","hosts"]
+        stopwords = ["joke","carpet","dress","olden","look","moment","award","the","--","hosts","ever","speech"]
         for item in regexParse:
             add = True
             if any(kw in item.lower() for kw in stopwords) or len(item.split(" ")) < 4:
@@ -586,7 +583,7 @@ class AwardParser(object):
             if len(dash) == 2 and len(dash[1].split(" ")) > 3:
                 add = False
             
-            if "-" in item[-5:]:
+            if any(kw in item[-5:] for kw in [",","-"]):
                 add = False
 
             if add:
@@ -595,10 +592,77 @@ class AwardParser(object):
                 else:
                     awardDict[item]=1
 
-        print(sorted(awardDict))
+        print(list(awardDict))
+
+    def awardParseRegex3(self):
+        #regexParse = self.datab.getRegexFullMatchOnly(re.compile("\n\nBest .*(\n\n|\nW)"))
+        regexParse = self.datab.getRegexFullMatchOnly(re.compile("(^|\n)Best( [A-Z][a-z]+| -| [a-z][a-z]?)+ [A-Z][a-z]+"))
+
+        awardDict = {}
+
+        stopwords = ["joke","carpet","dress","olden","look","moment","award","the","--","hosts","ever","speech","win", "is","should"]
+        for item in regexParse:
+            add = True
+            if any(kw in item.lower() for kw in stopwords) or len(item.split(" ")) < 4:
+                add = False
+
+            dash = item.split(" - ")
+            if len(dash) > 2:
+                item = " - ".join([dash[0],dash[1]])
+            if len(dash) == 2 and len(dash[1].split(" ")) > 3:
+                add = False
+            
+            
+            if any(kw in item[-5:] for kw in [",","-"]):
+                add = False
+
+            if add:
+                if item in awardDict:
+                    awardDict[item]+=1
+                else:
+                    awardDict[item]=1
+
+        print(list(awardDict))"""
+
+    def awardParseRegexFinal(self):
+        regexParse = self.datab.getRegexFullMatchOnly(re.compile("(- |^|:|: |,|, |'|\n)(BEST|best|Best) [A-Za-z, \-]+(: | : |\n|$|[\s]*\n|[\s]*$|')"))
+        awardDict = {}
+        
+        stopwords = HardQuery.stopwords
+        for item in regexParse:
+            add = True
+            if any(kw in item.lower() for kw in stopwords):
+                add = False
+
+            dash = item.split(" - ")
+            if len(dash) > 2:
+                item = " - ".join([dash[0],dash[1]])
+            if len(dash) == 2 and len(dash[1].split(" ")) > 3:
+                add = False
+            
+            
+            if any(kw in item[-5:] for kw in [",","-","or"]):
+                add = False
+            item = item.lower().replace("tv","television").replace(":","").replace("\n","").replace("'","").replace(",","")
+            item = item[item.index("best"):]
+
+            while item[-1] == ' ':
+                item = item[:-1]
+
+            if len(item.split(" ")) < 4:
+                add = False
+            
+            if add:
+                if item in awardDict:
+                    awardDict[item]+=1
+                else:
+                    awardDict[item]=1
+        
+        #print(sorted(awardDict))
+        return [x for x in awardDict if awardDict[x] > 1] 
 
 
-    def awardParseRegex(self):
+    """def awardParseRegex(self):
         print("parsing awards",self.year)
         regexParse = self.datab.getRegexFullMatchOnly(re.compile("Best(([\s][A-Z\-][a-z,]{2,})| in a| in an| by an| or| \-| for)+"))
         tangent = ["on Picture","Series"]
@@ -622,7 +686,7 @@ class AwardParser(object):
             else:
                 vote[string] = 1
 
-        return [x for x in vote if vote[x] > 1]
+        return [x for x in vote if vote[x] > 1]"""
 
 
     def WeinsteinMachine(self):
@@ -664,25 +728,24 @@ class AwardParser(object):
         
         return []
 
-            
+    def Top5BestDressed(self):
+            firstcull = self.datab.ANDorFILTER([["beautiful","gorgeous","ravishing","best dressed"]],False)
 
+            docs = []
+            hostVote = {}
+            if len(firstcull) > 500:
+                firstcull = firstcull[0:500]
 
-        
-                
+            for tweet in firstcull:
+                docs.append(spacyNLP(tweet))
 
-            
+            for doc in docs:
+                for ent in doc.ents:
+                    if ent.label_ == "PERSON" and "olden" not in ent.text:
+                        if ent.lower_ in hostVote:
+                            hostVote[ent.lower_] += 1
+                        else:
+                            hostVote[ent.lower_] = 1
 
-ap = AwardParser(2015)
-print(ap.awardParseRegex2())
-#ap.awardParseRegex2()
-#print(ap.WeinsteinMachine())
-#OFFICIAL_AWARDS_1315 = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
-#ap.acceptActualAwards(OFFICIAL_AWARDS_1315)
-#ap.FindAllWinners()
-#print(ap.newNominees())
-#print(ap.BeatParser("how to train your dragon 2","MEDIA"))
-#print(ap.newNominees())
-#print(ap.FindAllNominees())
-#print(ap.AllPresentersFinder())
-#print(ap.getAllPresenters())
-#print(ap.getAllPresenters())#print(ap.datab.ANDorFILTER([])
+            hVs = sorted(hostVote,key = hostVote.get)
+            return hVs[-5:]

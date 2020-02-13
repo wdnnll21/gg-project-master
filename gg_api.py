@@ -23,7 +23,7 @@ def get_awards(year):
     if ap == None or ap.year != year:
         ap = AwardParser(year)
     print("got awards",year)
-    return ap.awardParseRegex()
+    return ap.awardParseRegexFinal()
     
 
 def get_nominees(year):
@@ -76,6 +76,32 @@ def get_presenters(year):
         ap.acceptActualAwards(OFFICIAL_AWARDS_1819)
         return ap.getAllPresenters()
 
+def get_games(year):
+    """ap.DrinkingGames returns a list of every unique drinking game
+    submitted at the Golden Globes
+    """
+    global ap
+    if ap == None or ap.year != year:
+        ap = AwardParser(year)
+    return ap.DrinkingGames()
+
+def get_weinstein(year):
+    """Weinstein returns a dictionary with two keys: unique-mentions (valued as a number)
+    and most-associated-terms (a list of strings)
+    """
+    global ap
+    if ap == None or ap.year != year:
+        ap = AwardParser(year)
+    return ap.WeinsteinMachine()
+
+def get_best_dressed(year):
+    """Returns a list of 5 well-dressed individuals"""
+    global ap
+    if ap == None or ap.year != year:
+        ap = AwardParser(year)
+    return ap.Top5BestDressed()
+
+
 def pre_ceremony():
     '''This function loads/fetches/processes any data your program
     will use, and stores that data in your DB or in a json, csv, or
@@ -94,6 +120,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#get_winner(2020)
-#print(get_presenters(2020))

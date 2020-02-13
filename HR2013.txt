@@ -1,0 +1,189 @@
+GOLDEN GLOBES 2013
+
+Hosts: ['amy poehler', 'tina fey']
+
+Awards: 
+best performance by an actor in a supporting role in a motion picture
+best supporting actor in a motion picture
+best supporting actor in a drama
+best supporting actress television
+best television series comedy
+best actor in a television series drama
+best television series drama
+best television series - drama
+best original score - motion picture
+best original song - motion picture
+best original song in a motion picture
+best original song motion picture
+best actress in a comedy
+best supporting actress in a motion picture
+best performance by an actress in a supporting role in a motion picture
+best screenplay - motion picture
+best screenplay motion picture
+best foreign language film
+best actress in a television series drama
+best animated feature film
+best animated feature film - brave
+best actress in a television comedy
+best actress in a motion picture drama
+best performance by an actress in a motion picture - drama
+best actor in a motion picture drama
+best actor in a motion picture - drama
+best motion picture drama
+best motion picture - drama
+best actress in a motion picture - drama
+
+Winners, Presenters, and Nominees:
+Award: cecil b. demille award
+Winner: jodie foster
+Nominees: ['julia roberts', 'glenn close', 'a. robert downey jr. &amp', "b. jodie foster's", "robert downey jr.'s", 'robert downey jr', 'robert downey', 'mel gibson', 'robert downey jr.']
+Presenters: ['robert downey']
+
+Award: best motion picture - drama
+Winner: argo.
+Nominees: ['lincoln', 'argo', 'argo.']
+Presenters: ['julia roberts']
+
+Award: best performance by an actress in a motion picture - drama
+Winner: jessica chastain
+Nominees: ['robyn']
+Presenters: []
+
+Award: best performance by an actor in a motion picture - drama
+Winner: daniel day-lewis
+Nominees: ["daniel day-lewis'", 'joaquin phoenix', 'joaquin']
+Presenters: ['lewis lincoln']
+
+Award: best motion picture - comedy or musical
+Winner: les miserables
+Nominees: ['silver linings playbook']
+Presenters: ['dustin hoffman']
+
+Award: best performance by an actress in a motion picture - comedy or musical
+Winner: jennifer lawrence
+Nominees: ['haha', 'judi dench', 'maggie smith', 'merryl', 'lawrence', 'anne hathaway', "jennifer lawrence's", 'meryl streep', 'meryl']
+Presenters: ['bill clinton', 'jennifer lawrence']
+
+Award: best performance by an actor in a motion picture - comedy or musical
+Winner: hugh jackman
+Nominees: ['bradley cooper', 'daniel day lewis', "hugh jackman's", 'robert downing jr.', 'ben affleck', 'daniel craig', 'robert downey jr.', 'hugh']
+Presenters: []
+
+Award: best animated feature film
+Winner: brave
+Nominees: ['wreck-it ralph', 'wreck it ralph', 'wreck-it ralph,']
+Presenters: ['bill', 'cohen']
+
+Award: best foreign language film
+Winner: amour
+Nominees: []
+Presenters: ['sylvester stallone']
+
+Award: best performance by an actress in a supporting role in a motion picture
+Winner: anne hathaway
+Nominees: ['mandy patinkin', 'sally field', 'beiber', 'robert pattinson', 'jodie foster', 'taylor', "anne hathaway's", 'jennifer lawrence']
+Presenters: []
+
+Award: best performance by an actor in a supporting role in a motion picture
+Winner: 
+Nominees: []
+Presenters: []
+
+Award: best director - motion picture
+Winner: ben affleck
+Nominees: ['robert pattinson', 'steven spielberg', 'stephen spielberg', "ben affleck's", 'george clooney', 'robert downey jr', 'ang lee', 'spielberg', 'ben affleck']
+Presenters: ['halle berry', 'ben affleck', 'ben']
+
+Award: best screenplay - motion picture
+Winner: quentin tarantino
+Nominees: ['amanda seyfried', 'tony kushner', "robin williams'", 'wowwwwww ben afflack', 'stephen spielberg', 'ang lee', 'kathryn bigelow', 'steven spielberg', 'ben affleck']
+Presenters: ['amanda seyfried', 'robert pattinson']
+
+Award: best original score - motion picture
+Winner: mom and dad for the gift of music that you gave me
+Nominees: []
+Presenters: ['mychael danna', 'jennifer lopez', 'jason statham']
+
+Award: best original song - motion picture
+Winner: skyfall
+Nominees: ['for you']
+Presenters: ['j. lo']
+
+Award: best television series - drama
+Winner: homeland
+Nominees: ['cranston', 'the newsroom']
+Presenters: ['paul rudd']
+
+Award: best performance by an actress in a television series - drama
+Winner: claire danes
+Nominees: ['lea michele', 'mandy', 'taylor']
+Presenters: ['lea michele', 'claire dane']
+
+Award: best performance by an actor in a television series - drama
+Winner: damian lewis
+Nominees: ['damian lewis homeland', 'brian cranston', 'bryan cranston']
+Presenters: []
+
+Award: best television series - comedy or musical
+Winner: girls
+Nominees: ['who is amy poehler?', 'the big bang theory', 'modern family', 'modernfamily']
+Presenters: ['jay leno', 'jimmy fallon']
+
+Award: best performance by an actress in a television series - comedy or musical
+Winner: 
+Nominees: []
+Presenters: []
+
+Award: best performance by an actor in a television series - comedy or musical
+Winner: 
+Nominees: []
+Presenters: []
+
+Award: best mini-series or motion picture made for television
+Winner: game change
+Nominees: ['hatfields &amp; mccoys']
+Presenters: []
+
+Award: best performance by an actress in a mini-series or motion picture made for television
+Winner: julianne moore
+Nominees: ['amy poehler', 'jessica lange', 'sorry julianne moore', "jack black's", 'maude', 'jon hamm', 'rob pattinson']
+Presenters: []
+
+Award: best performance by an actor in a mini-series or motion picture made for television
+Winner: kevin costner
+Nominees: ['damien francisco', 'robert downey jr.', "kevin costner's"]
+Presenters: []
+
+Award: best performance by an actress in a supporting role in a series, mini-series or motion picture made for television
+Winner: maggie smith
+Nominees: ['jennifer lawrence', 'meryl streep', 'judi dench', 'meryl', 'judy dench']
+Presenters: ['dennis quaid', 'kerry washington']
+
+Award: best performance by an actor in a supporting role in a series, mini-series or motion picture made for television
+Winner: ed harris
+Nominees: ['indigo montoya', 'mandy patankin', 'saul', 'mandy patinkin']
+Presenters: []
+
+
+Best Dressed:
+julianne moore
+anne hathaway
+kerry washington
+tina fey
+kate hudson
+
+Some Drinking Games:
+ every time someone mentions their agent or manager! 
+ every time quentin tarantino gives the peace sign 
+ Drink anytime a celebrity is awkward. That first acceptance speech = a whole glass. 
+ every time they show Ben Affleck, please don't go anywhere near a car tonight. 
+when Jennifer Lawrence mentioned Weinstein 
+ drink every time someone tweets about it so that you get blackout drunk and don't have to endure the pain.
+ drink every time someone says the word "journey"
+ every time Amy Poehler awkwardly blinks
+ take a shot every time you see a bad outfit.
+
+Weinstein Analysis:
+Number of Unique Mentions:84
+Most Associated Terms:
+['Jennifer', 'joke', 'thanked', 'Lawrence', 'killing', 'Thank', 'thank']
